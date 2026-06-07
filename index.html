@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CotiGroup Realtime</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+
+    <nav class="bg-blue-600 text-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <img id="site-logo" src="logo.jpg" alt="Logo" class="h-10 w-10 rounded-xl object-cover bg-white shadow-inner">
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide leading-none">Les partisans du coran</h1>
+                    <span class="text-[10px] text-blue-200 font-medium tracking-wider uppercase">Votre gestion en temps réel</span>
+                </div>
+            </div>
+            <span class="bg-blue-700 px-4 py-2 rounded-full text-sm font-semibold border border-blue-500">
+                <i class="fa-solid fa-bolt mr-2"></i> Realtime DB Live
+            </span>
+        </div>
+    </nav>
+
+    <main class="container mx-auto px-4 py-8 max-w-6xl">
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-sm text-slate-500 font-medium">Total Enregistré</p>
+                <h3 id="stat-total" class="text-2xl font-bold text-slate-800 mt-1">0 FCFA</h3>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-sm text-slate-500 font-medium">Membres Pointés</p>
+                <h3 id="stat-membres" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <p class="text-sm text-slate-500 font-medium">Moyenne / Membre</p>
+                <h3 id="stat-moyenne" class="text-2xl font-bold text-slate-800 mt-1">0 FCFA</h3>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 h-fit">
+                <h2 id="form-title" class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-blue-600"></i> Enregistrer
+                </h2>
+                <form id="cotisation-form" class="space-y-4">
+                    <input type="hidden" id="member-id">
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold mb-1">Prénom</label>
+                            <input type="text" id="member-firstname" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold mb-1">Nom</label>
+                            <input type="text" id="member-lastname" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold mb-1">Téléphone</label>
+                        <input type="tel" id="member-phone" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold mb-1">Montant (FCFA)</label>
+                        <input type="number" id="member-amount" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold mb-1">Mode de paiement</label>
+                        <select id="member-method" required class="w-full px-3 py-2 rounded-xl border border-slate-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="wave">Wave</option>
+                            <option value="orange">Orange Money</option>
+                            <option value="especes">Espèces</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-semibold mb-1">Photo (Optionnel)</label>
+                        <input type="file" id="member-photo" accept="image/*" class="w-full text-xs">
+                        <div id="photo-preview-container" class="hidden mt-2 flex items-center gap-2 bg-slate-50 p-2 rounded-lg">
+                            <img id="photo-preview" src="" class="w-10 h-10 object-cover rounded-full">
+                            <button type="button" id="btn-remove-photo" class="text-rose-500 ml-auto text-xs"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-2 flex gap-2">
+                        <button type="submit" id="btn-submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl transition cursor-pointer">Enregistrer</button>
+                        <button type="button" id="btn-cancel" class="hidden w-1/3 bg-slate-100 text-slate-600 font-medium py-2.5 rounded-xl">Annuler</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col justify-between">
+                <div>
+                    <div class="p-6 border-b border-slate-100 flex justify-between items-center flex-wrap gap-4">
+                        <h2 class="text-xl font-bold flex items-center gap-2">Registre</h2>
+                        <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                            <button id="btn-pdf" class="bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium px-4 py-1.5 rounded-xl transition flex items-center gap-2 cursor-pointer shadow-sm">
+                                <i class="fa-solid fa-file-pdf"></i> Exporter en PDF
+                            </button>
+                            <input type="text" id="search" placeholder="Rechercher..." class="pl-4 pr-4 py-1.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-b">
+                                    <th class="py-4 px-6">Membre</th>
+                                    <th class="py-4 px-6">Téléphone</th>
+                                    <th class="py-4 px-6">Méthode</th>
+                                    <th class="py-4 px-6 text-right">Montant</th>
+                                    <th class="py-4 px-6 text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="members-table-body" class="divide-y text-sm"></tbody>
+                        </table>
+                    </div>
+
+                    <div id="empty-state" class="flex flex-col items-center justify-center py-12 text-slate-400">
+                        <i id="state-icon" class="fa-solid fa-spinner fa-spin text-4xl mb-3 text-blue-500"></i>
+                        <p id="state-text">Connexion en cours...</p>
+                    </div>
+                </div>
+
+                <div id="pagination-controls" class="p-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-medium text-slate-600 hidden">
+                    <div class="flex items-center gap-2">
+                        <span>Afficher</span>
+                        <select id="items-per-page" class="bg-white border border-slate-200 rounded-lg p-1 text-xs focus:outline-none">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                        </select>
+                        <span>membres par page</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button id="btn-prev" class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 disabled:opacity-50 disabled:pointer-events-none transition cursor-pointer">
+                            <i class="fa-solid fa-chevron-left"></i> Précédent
+                        </button>
+                        <span id="page-info">Page 1 sur 1</span>
+                        <button id="btn-next" class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 disabled:opacity-50 disabled:pointer-events-none transition cursor-pointer">
+                            Suivant <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                
+            </div>
+            
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Définition de l'image locale unique
+        const LOGO_IMAGE_URL = "logo.png";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBCXp-3OSAXaShHWsa9L9ZSBxtgyxCLz3I",
+            authDomain: "corans-93968.firebaseapp.com",
+            databaseURL: "https://corans-93968-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "corans-93968",
+            storageBucket: "corans-93968.firebasestorage.app",
+            messagingSenderId: "162456125315",
+            appId: "1:162456125315:web:7dc87d0f973386286b00b6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const dbRef = ref(db, 'cotisations');
+
+        let membersList = [];
+        let isEditing = false;
+        let currentPhotoBase64 = "";
+
+        // Paramètres de pagination
+        let currentPage = 1;
+        let itemsPerPage = 10;
+
+        const form = document.getElementById('cotisation-form');
+        const memberIdInput = document.getElementById('member-id');
+        const memberFirstnameInput = document.getElementById('member-firstname');
+        const memberLastnameInput = document.getElementById('member-lastname');
+        const memberPhoneInput = document.getElementById('member-phone');
+        const memberAmountInput = document.getElementById('member-amount');
+        const memberMethodInput = document.getElementById('member-method');
+        const memberPhotoInput = document.getElementById('member-photo');
+        const photoPreviewContainer = document.getElementById('photo-preview-container');
+        const photoPreview = document.getElementById('photo-preview');
+        const btnRemovePhoto = document.getElementById('btn-remove-photo');
+        const formTitle = document.getElementById('form-title');
+        const btnSubmit = document.getElementById('btn-submit');
+        const btnCancel = document.getElementById('btn-cancel');
+        const tableBody = document.getElementById('members-table-body');
+        const emptyState = document.getElementById('empty-state');
+        const stateIcon = document.getElementById('state-icon');
+        const stateText = document.getElementById('state-text');
+        const searchInput = document.getElementById('search');
+
+        // Eléments DOM Pagination
+        const paginationControls = document.getElementById('pagination-controls');
+        const selectItemsPerPage = document.getElementById('items-per-page');
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const pageInfo = document.getElementById('page-info');
+        const btnPdf = document.getElementById('btn-pdf');
+
+        // Récupération des données en temps réel
+        onValue(dbRef, (snapshot) => {
+            membersList = [];
+            const data = snapshot.val();
+            if (data) {
+                Object.keys(data).forEach((key) => {
+                    membersList.push({ id: key, ...data[key] });
+                });
+            }
+            renderTable();
+            updateStats();
+        }, (error) => {
+            console.error(error);
+            stateText.innerText = "Erreur d'accès à la base de données.";
+            stateIcon.className = "fa-solid fa-circle-exclamation text-rose-500 text-4xl mb-3";
+        });
+
+        function updateStats() {
+            const total = membersList.reduce((sum, m) => sum + Number(m.amount || 0), 0);
+            document.getElementById('stat-total').innerText = `${total.toLocaleString('fr-FR')} FCFA`;
+            document.getElementById('stat-membres').innerText = membersList.length;
+            const avg = membersList.length > 0 ? Math.round(total / membersList.length) : 0;
+            document.getElementById('stat-moyenne').innerText = `${avg.toLocaleString('fr-FR')} FCFA`;
+        }
+
+        function getMethodBadge(method) {
+            if(method === 'wave') return `<span class="bg-sky-100 text-sky-700 text-xs px-2.5 py-1 rounded-full font-semibold border border-sky-200">Wave</span>`;
+            if(method === 'orange') return `<span class="bg-orange-100 text-orange-700 text-xs px-2.5 py-1 rounded-full font-semibold border border-orange-200">Orange</span>`;
+            return `<span class="bg-emerald-100 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-semibold border border-emerald-200">Espèces</span>`;
+        }
+
+        function renderTable() {
+            const term = searchInput.value.toLowerCase();
+            const filtered = membersList.filter(m => 
+                (m.firstname || "").toLowerCase().includes(term) || 
+                (m.lastname || "").toLowerCase().includes(term) ||
+                (m.phone || "").includes(term)
+            );
+
+            tableBody.innerHTML = '';
+            
+            if (filtered.length === 0) {
+                stateIcon.className = "fa-solid fa-folder-open text-4xl mb-3 text-slate-300";
+                stateText.innerText = "Aucun enregistrement trouvé.";
+                emptyState.classList.remove('hidden');
+                paginationControls.classList.add('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                paginationControls.classList.remove('hidden');
+
+                const totalPages = Math.ceil(filtered.length / itemsPerPage);
+                if (currentPage > totalPages) currentPage = totalPages || 1;
+
+                const startIndex = (currentPage - 1) * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+                const paginatedItems = filtered.slice(startIndex, endIndex);
+
+                pageInfo.innerText = `Page ${currentPage} sur ${totalPages}`;
+                btnPrev.disabled = currentPage === 1;
+                btnNext.disabled = currentPage === totalPages;
+
+                paginatedItems.forEach(member => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition-colors";
+                    const avatar = member.photo 
+                        ? `<img src="${member.photo}" class="w-9 h-9 rounded-full object-cover">`
+                        : `<div class="w-9 h-9 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">${(member.firstname?.[0] || 'M').toUpperCase()}</div>`;
+
+                    tr.innerHTML = `
+                        <td class="py-3 px-6 flex items-center gap-3">${avatar} <span class="font-medium">${escapeHtml(member.firstname)} ${escapeHtml(member.lastname)}</span></td>
+                        <td class="py-3 px-6 text-slate-500">${escapeHtml(member.phone)}</td>
+                        <td class="py-3 px-6">${getMethodBadge(member.method)}</td>
+                        <td class="py-3 px-6 text-right font-bold text-slate-700">${Number(member.amount).toLocaleString('fr-FR')} FCFA</td>
+                        <td class="py-3 px-6 text-center space-x-1.5">
+                            <button data-id="${member.id}" class="btn-edit text-blue-600 bg-blue-50 hover:bg-blue-100 p-2 rounded-xl transition cursor-pointer shadow-sm" title="Modifier"><i class="fa-solid fa-pen text-sm pointer-events-none"></i></button>
+                            <button data-id="${member.id}" class="btn-delete text-rose-600 bg-rose-50 hover:bg-rose-100 p-2 rounded-xl transition cursor-pointer shadow-sm" title="Supprimer"><i class="fa-solid fa-trash-can text-sm pointer-events-none"></i></button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+
+                document.querySelectorAll('.btn-edit').forEach(btn => btn.addEventListener('click', (e) => editMember(e.target.dataset.id)));
+                document.querySelectorAll('.btn-delete').forEach(btn => btn.addEventListener('click', (e) => deleteMember(e.target.dataset.id)));
+            }
+        }
+
+        // Événements de contrôle de la Pagination
+        selectItemsPerPage.addEventListener('change', (e) => {
+            itemsPerPage = parseInt(e.target.value);
+            currentPage = 1;
+            renderTable();
+        });
+
+        btnPrev.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        });
+
+        btnNext.addEventListener('click', () => {
+            const term = searchInput.value.toLowerCase();
+            const filtered = membersList.filter(m => 
+                (m.firstname || "").toLowerCase().includes(term) || 
+                (m.lastname || "").toLowerCase().includes(term) ||
+                (m.phone || "").includes(term)
+            );
+            const totalPages = Math.ceil(filtered.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTable();
+            }
+        });
+
+        // GENERATION PDF
+        btnPdf.addEventListener('click', () => {
+            if(membersList.length === 0) {
+                alert("Aucune donnée à exporter.");
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'mm', 'a4');
+
+                // 1. AJOUT DE L'IMAGE DU LOGO DANS LE PDF
+                doc.addImage(LOGO_IMAGE_URL, 'PNG', 14, 11, 12, 12);
+
+                // 2. EN-TÊTE TEXTE AVEC SLOGAN
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(16);
+                doc.setTextColor(30, 41, 59); 
+                doc.text("CotiGroup Realtime System", 30, 18);
+
+                doc.setFont("Helvetica", "italic");
+                doc.setFontSize(8);
+                doc.setTextColor(37, 99, 235);
+                doc.text("Votre gestion en temps réel", 30, 22);
+
+                doc.setFont("Helvetica", "normal");
+                doc.setFontSize(9);
+                doc.setTextColor(100, 116, 139);
+                doc.text("Registre global des paiements et cotisations", 30, 27);
+
+                doc.setDrawColor(226, 232, 240);
+                doc.line(14, 31, 196, 31);
+
+                // 3. CARTES INFOS ET METADONNÉES
+                const totalGlobal = membersList.reduce((sum, m) => sum + Number(m.amount || 0), 0);
+                doc.setFontSize(9);
+                doc.setTextColor(100, 116, 139);
+                doc.text(`Date d'extraction : ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`, 14, 39);
+                doc.text(`Membres listés : ${membersList.length}`, 14, 45);
+                
+                doc.setFont("Helvetica", "bold");
+                doc.setFontSize(11);
+                doc.setTextColor(37, 99, 235);
+                doc.text(`MONTANT CUMULÉ : ${totalGlobal.toLocaleString('fr-FR')} FCFA`, 110, 42);
+
+                // 4. CORPS ET LIGNES DU TABLEAU
+                const tableHeaders = [['#', 'Nom Complet / Membre', 'Numéro de Téléphone', 'Méthode', 'Montant']];
+                const tableRows = [];
+                
+                membersList.forEach((m, index) => {
+                    tableRows.push([
+                        index + 1,
+                        `${m.firstname || ''} ${m.lastname || ''}`,
+                        m.phone || '',
+                        m.method ? m.method.toUpperCase() : 'ESPÈCES',
+                        `${Number(m.amount || 0).toLocaleString('fr-FR')} FCFA`
+                    ]);
+                });
+
+                // Ligne finale de conclusion (Total)
+                tableRows.push([
+                    '', '', '', 
+                    'TOTAL GENERAL :', 
+                    `${totalGlobal.toLocaleString('fr-FR')} FCFA`
+                ]);
+
+                // 5. AUTOTABLE SYNTAXE STANDARD
+                doc.autoTable({
+                    startY: 52,
+                    head: tableHeaders,
+                    body: tableRows,
+                    headStyles: { fillColor: [37, 99, 235], fontStyle: 'bold', fontSize: 10 },
+                    bodyStyles: { fontSize: 9, textColor: [51, 65, 85] },
+                    alternateRowStyles: { fillColor: [248, 250, 252] },
+                    theme: 'striped',
+                    margin: { left: 14, right: 14 },
+                    didParseCell: function (data) {
+                        if (data.row.index === tableRows.length - 1) {
+                            data.cell.styles.fontStyle = 'bold';
+                            data.cell.styles.fillColor = [241, 245, 249];
+                            data.cell.styles.textColor = [15, 23, 42];
+                        }
+                    }
+                });
+
+                doc.save(`registre-cotisations-${new Date().toISOString().slice(0,10)}.pdf`);
+
+            } catch (error) {
+                console.error("Erreur PDF:", error);
+                alert("Erreur de génération. Vérifie les logs.");
+            }
+        });
+
+        // Traitement compressé des fichiers photo
+        memberPhotoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 80; 
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * (MAX_WIDTH / img.width);
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        currentPhotoBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                        photoPreview.src = currentPhotoBase64;
+                        photoPreviewContainer.classList.remove('hidden');
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        btnRemovePhoto.addEventListener('click', () => {
+            currentPhotoBase64 = "";
+            memberPhotoInput.value = "";
+            photoPreviewContainer.classList.add('hidden');
+        });
+
+        // Envoi et Modification des données
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            btnSubmit.disabled = true;
+            const id = memberIdInput.value;
+            const data = {
+                firstname: memberFirstnameInput.value.trim(),
+                lastname: memberLastnameInput.value.trim(),
+                phone: memberPhoneInput.value.trim(),
+                amount: parseFloat(memberAmountInput.value) || 0,
+                method: memberMethodInput.value,
+                photo: currentPhotoBase64
+            };
+
+            try {
+                if (isEditing) {
+                    await update(ref(db, `cotisations/${id}`), data);
+                } else {
+                    await push(dbRef, data);
+                }
+                resetForm();
+            } catch (err) {
+                console.error(err);
+            } finally {
+                btnSubmit.disabled = false;
+            }
+        });
+
+        function editMember(id) {
+            const m = membersList.find(x => x.id === id);
+            if (!m) return;
+            memberIdInput.value = m.id;
+            memberFirstnameInput.value = m.firstname || "";
+            memberLastnameInput.value = m.lastname || "";
+            memberPhoneInput.value = m.phone || "";
+            memberAmountInput.value = m.amount || "";
+            memberMethodInput.value = m.method || "wave";
+            if (m.photo) {
+                currentPhotoBase64 = m.photo;
+                photoPreview.src = m.photo;
+                photoPreviewContainer.classList.remove('hidden');
+            }
+            formTitle.innerHTML = `<i class="fa-solid fa-user-pen text-amber-500"></i> Modifier`;
+            isEditing = true;
+            btnCancel.classList.remove('hidden');
+        }
+
+        async function deleteMember(id) {
+            if (confirm("Voulez-vous vraiment supprimer cette cotisation ?")) {
+                await remove(ref(db, `cotisations/${id}`));
+            }
+        }
+
+        btnCancel.addEventListener('click', resetForm);
+
+        function resetForm() {
+            form.reset();
+            currentPhotoBase64 = "";
+            photoPreviewContainer.classList.add('hidden');
+            memberIdInput.value = '';
+            formTitle.innerHTML = `<i class="fa-solid fa-user-plus text-blue-600"></i> Enregistrer`;
+            isEditing = false;
+            btnCancel.classList.add('hidden');
+        }
+
+        searchInput.addEventListener('input', () => {
+            currentPage = 1;
+            renderTable();
+        });
+        
+        function escapeHtml(text) {
+            if(!text) return "";
+            const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+    </script>
+</body>
+</html>
