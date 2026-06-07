@@ -163,9 +163,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        // Définition de l'image locale unique
-        const LOGO_IMAGE_URL = "logo.png";
-
         const firebaseConfig = {
             apiKey: "AIzaSyBCXp-3OSAXaShHWsa9L9ZSBxtgyxCLz3I",
             authDomain: "corans-93968.firebaseapp.com",
@@ -330,7 +327,7 @@
             }
         });
 
-        // GENERATION PDF
+        // GENERATION PDF ULTRA-SÉCURISÉE (VIA CANVAS)
         btnPdf.addEventListener('click', () => {
             if(membersList.length === 0) {
                 alert("Aucune donnée à exporter.");
@@ -341,24 +338,53 @@
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'mm', 'a4');
 
-                // 1. AJOUT DE L'IMAGE DU LOGO DANS LE PDF
-                doc.addImage(LOGO_IMAGE_URL, 'PNG', 14, 11, 12, 12);
+                // Traitement par conversion Canvas pour couper tout lien réseau ou erreur CORS
+                const logoEl = document.getElementById('site-logo');
+                let imageLoaded = false;
+                let imgBase64 = "";
+
+                if (logoEl && logoEl.complete && logoEl.naturalWidth !== 0) {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = logoEl.naturalWidth;
+                        canvas.height = logoEl.naturalHeight;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(logoEl, 0, 0);
+                        // On extrait l'image brute sous forme de chaîne de caractères
+                        imgBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                        imageLoaded = true;
+                    } catch (canvasError) {
+                        console.warn("Échec de la conversion Base64 locale :", canvasError);
+                    }
+                }
+
+                // Insertion de la chaîne d'image brute si elle a été générée avec succès
+                if (imageLoaded && imgBase64) {
+                    try {
+                        doc.addImage(imgBase64, 'JPEG', 14, 11, 12, 12);
+                    } catch (pdfImgError) {
+                        console.warn("jsPDF n'a pas pu traiter la chaîne d'image :", pdfImgError);
+                        imageLoaded = false; // Ajuste le positionnement du texte si l'image échoue
+                    }
+                }
+
+                const textStartX = imageLoaded ? 30 : 14;
 
                 // 2. EN-TÊTE TEXTE AVEC SLOGAN
                 doc.setFont("Helvetica", "bold");
                 doc.setFontSize(16);
                 doc.setTextColor(30, 41, 59); 
-                doc.text("CotiGroup Realtime System", 30, 18);
+                doc.text("CotiGroup Realtime System", textStartX, 18);
 
                 doc.setFont("Helvetica", "italic");
                 doc.setFontSize(8);
                 doc.setTextColor(37, 99, 235);
-                doc.text("Votre gestion en temps réel", 30, 22);
+                doc.text("Votre gestion en temps réel", textStartX, 22);
 
                 doc.setFont("Helvetica", "normal");
                 doc.setFontSize(9);
                 doc.setTextColor(100, 116, 139);
-                doc.text("Registre global des paiements et cotisations", 30, 27);
+                doc.text("Registre global des paiements et cotisations", textStartX, 27);
 
                 doc.setDrawColor(226, 232, 240);
                 doc.line(14, 31, 196, 31);
@@ -418,8 +444,8 @@
                 doc.save(`registre-cotisations-${new Date().toISOString().slice(0,10)}.pdf`);
 
             } catch (error) {
-                console.error("Erreur PDF:", error);
-                alert("Erreur de génération. Vérifie les logs.");
+                console.error("Erreur critique PDF interceptée :", error);
+                alert("Erreur de traitement. Le PDF a été généré sans le logo pour éviter le plantage.");
             }
         });
 
